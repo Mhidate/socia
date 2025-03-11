@@ -1,4 +1,5 @@
 # socia
+  Untuk belajar backend,
 
 # paket yang digunakan
 - go get github.com/gofiber/fiber/v2

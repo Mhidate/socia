@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"log"
 	"os"
 	"strings"
 
@@ -9,31 +10,64 @@ import (
 )
 
 func JWTMiddleware(c *fiber.Ctx) error {
-	authHeader := c.Get("Authorization")
+	authHeader := strings.TrimSpace(c.Get("Authorization"))
 	if authHeader == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Missing token"})
 	}
 
-	tokenParts := strings.Split(authHeader, "Bearer ")
-	if len(tokenParts) != 2 {
+	// Pastikan header menggunakan format "Bearer <token>"
+	if !strings.HasPrefix(authHeader, "Bearer ") {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token format"})
 	}
 
-	tokenString := tokenParts[1]
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		log.Println("⚠ WARNING: JWT_SECRET tidak ditemukan di environment!")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Server misconfiguration"})
+	}
+
+	// Verifikasi token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("SECRET_KEY")), nil
+		// Pastikan token menggunakan metode HS256
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			log.Println("⚠ Invalid signing method:", token.Header["alg"])
+			return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid signing method")
+		}
+		return []byte(secretKey), nil
 	})
 
 	if err != nil || !token.Valid {
+		log.Println("⚠ Invalid token:", err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token"})
 	}
 
-	// Ambil user_id dari token
+	// Ambil user_id dari claims
 	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
+	if !ok || claims["user_id"] == nil {
+		log.Println("⚠ Invalid claims:", claims)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid claims"})
 	}
 
-	c.Locals("user_id", claims["user_id"]) // Simpan user_id di Fiber context
+	userID, ok := claims["user_id"]
+	if !ok {
+		log.Println("⚠ user_id tidak ditemukan di claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid claims"})
+	}
+
+	var userIDInt int
+	switch v := userID.(type) {
+	case float64:
+		userIDInt = int(v)
+	case int:
+		userIDInt = v
+	default:
+		log.Println("⚠ Invalid user_id type:", v)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user_id type"})
+	}
+
+	c.Locals("user_id", userIDInt)
+
 	return c.Next()
 }

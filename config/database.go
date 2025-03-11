@@ -3,34 +3,30 @@ package config
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
-	"path/filepath"
 
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 var DB *sql.DB
 
-func LoadEnv() {
-	// Cari path ke root proyek (assume eksekusi dari `cmd/main.go`)
-	rootPath, err := filepath.Abs("../") // Kembali ke root proyek
-	if err != nil {
-		log.Fatalf("Gagal mendapatkan path root proyek: %v", err)
-	}
+// func LoadEnv() {
+// 	// Cari path ke root proyek (assume eksekusi dari `cmd/main.go`)
+// 	rootPath, err := filepath.Abs("../") // Kembali ke root proyek
+// 	if err != nil {
+// 		log.Fatalf("Gagal mendapatkan path root proyek: %v", err)
+// 	}
 
-	envPath := filepath.Join(rootPath, ".env") // Path lengkap ke .env
-
-	// Load file .env dari root proyek
-	err = godotenv.Load(envPath)
-	if err != nil {
-		log.Println("Peringatan: Tidak dapat memuat file .env, menggunakan environment variable default")
-	}
-}
+// 	envPath := filepath.Join(rootPath, ".env") // Path lengkap ke .env
+// 	// Load file .env dari root proyek
+// 	err = godotenv.Load(envPath)
+// 	if err != nil {
+// 		log.Println("Peringatan: Tidak dapat memuat file .env, menggunakan environment variable default")
+// 	}
+// }
 
 func ConnectDB() error {
-	LoadEnv()
+	// LoadEnv()
 	connStr := os.Getenv("DATABASE_URL") // Ambil dari environment variable
 	if connStr == "" {
 		return fmt.Errorf("DATABASE_URL tidak ditemukan dalam environment variable")

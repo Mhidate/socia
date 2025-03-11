@@ -29,7 +29,7 @@ func GetPhotos(c *fiber.Ctx) error {
 
 // Upload photo
 func UploadPhoto(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(float64) // Ambil user_id dari JWT
+	userID := c.Locals("user_id").(int) // Ambil user_id dari JWT
 
 	photo := new(models.Photo)
 	if err := c.BodyParser(photo); err != nil {
@@ -48,7 +48,7 @@ func UploadPhoto(c *fiber.Ctx) error {
 
 // Edit photo (hanya oleh pemilik)
 func EditPhoto(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(float64)
+	userID := c.Locals("user_id").(int)
 	photoID := c.Params("id")
 
 	var photo models.Photo
@@ -75,7 +75,7 @@ func EditPhoto(c *fiber.Ctx) error {
 
 // Delete photo (hanya oleh pemilik)
 func DeletePhoto(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(float64)
+	userID := c.Locals("user_id").(int)
 	photoID := c.Params("id")
 
 	// Hapus hanya jika user adalah pemiliknya
